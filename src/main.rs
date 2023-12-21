@@ -34,12 +34,15 @@ fn auth_password() -> &'static str {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    println!("running main");
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("expected DATABASE_URL in env");
     let addrs = env::var("DB_HTTP_LISTEN_ADRESS").expect("expected DB_HTTP_LISTEN_ADRESS in env");
     let _x = env::var("DB_HTTP_AUTH_PASSWORD").expect("expected DB_HTTP_AUTH_PASSWORD in env");
 
+    println!("connecting to db, creating pool");
     let pool = web::Data::new(MySqlPool::connect(&database_url).await.unwrap());
+    println!("pool created.");
     println!("listening on '{:?}'", addrs);
     HttpServer::new(move || {
         let auth = HttpAuthentication::basic(validate_credentials);
