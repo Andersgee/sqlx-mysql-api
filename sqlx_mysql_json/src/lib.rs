@@ -23,7 +23,8 @@ pub mod row;
 ///}
 /// ```
 pub async fn query(pool: &MySqlPool, s: &String) -> Result<serde_json::Value, Error> {
-    match is_select_query(s) {
+    let query = parse::string_to_query(s)?;
+    match is_select_query(&query.sql) {
         true => fetch_all(pool, s).await,
         false => execute(pool, s).await,
     }

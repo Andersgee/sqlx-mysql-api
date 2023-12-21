@@ -9,18 +9,26 @@ struct Q {
 
 #[get("/")]
 async fn root(pool: web::Data<MySqlPool>, query: web::Query<Q>) -> impl Responder {
+    println!("query.q: {:?}", query.q);
     //general purpose "query via http"
     let result = sqlx_mysql_json::query(&pool, &query.q).await;
     match result {
-        Ok(value) => HttpResponse::Ok().json(value),
+        Ok(value) => {
+            println!("responding with value: {:?}", value);
+            HttpResponse::Ok().json(value)
+        }
         Err(err) => HttpResponse::BadRequest().json(err.to_string()),
     }
 }
 
 #[post("/transaction")]
-pub async fn transaction(pool: web::Data<MySqlPool>, queries: web::Json<Vec<Q>>) -> impl Responder {
+pub async fn transaction(
+    pool: web::Data<MySqlPool>,
+    queries: web::Json<Vec<String>>,
+) -> impl Responder {
     //multiple queries in sequence, with rollback if one fails.
     //cant really use results of earlier queries in later queries here like in a real transaction
+    println!("transaction, queries: {:?}", queries);
 
     match pool.acquire().await {
         Err(_) => HttpResponse::InternalServerError()
@@ -30,9 +38,9 @@ pub async fn transaction(pool: web::Data<MySqlPool>, queries: web::Json<Vec<Q>>)
                 HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
             }
             Ok(mut tx) => {
-                for query in queries.into_inner() {
+                for q in queries.into_inner() {
                     //see example of transaction here: https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
-                    match sqlx_mysql_json::execute_in_transaction(&mut tx, &query.q).await {
+                    match sqlx_mysql_json::execute_in_transaction(&mut tx, &q).await {
                         Ok(_) => {}
                         Err(err) => match tx.rollback().await {
                             Ok(_) => {

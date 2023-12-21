@@ -7,6 +7,10 @@ use dotenv::dotenv;
 use sqlx::MySqlPool;
 use std::{env, sync::OnceLock};
 
+//in javascript:
+//str = Buffer.from(`${userID}:${password}`).toString("base64")
+//headers: {Authorization: `Basic ${str}`},
+
 async fn validate_credentials(
     req: ServiceRequest,
     credentials: BasicAuth,
@@ -36,6 +40,7 @@ async fn main() -> std::io::Result<()> {
     let _x = env::var("DB_HTTP_AUTH_PASSWORD").expect("expected DB_HTTP_AUTH_PASSWORD in env");
 
     let pool = web::Data::new(MySqlPool::connect(&database_url).await.unwrap());
+    println!("listening on '{:?}'", addrs);
     HttpServer::new(move || {
         let auth = HttpAuthentication::basic(validate_credentials);
         App::new()
