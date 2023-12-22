@@ -1,6 +1,5 @@
 [mysqld]
-#skip-host-cache
+host_cache_size=0
 skip-name-resolve
 
-host_cache_size=0
 mysqlx=0 
