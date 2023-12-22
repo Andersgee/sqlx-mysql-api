@@ -97,19 +97,14 @@ VOLUME /var/lib/mysql
 # Config files
 COPY config/ /etc/mysql/
 COPY docker-entrypoint.sh /usr/local/bin/
-# backwards compat
-#RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh
+#RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat
 ENTRYPOINT ["docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 #EXPOSE 3306 33060
-#CMD ["mysqld"]
-
 
 #######################################
-#FROM debian:bullseye-slim
 COPY --from=builder /usr/local/cargo/bin/sqlx-mysql-api /usr/local/bin/myapp
 EXPOSE 3306 4000
-#CMD ["myapp"]
+#######################################
 
 CMD ["mysqld"]

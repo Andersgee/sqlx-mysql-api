@@ -410,8 +410,11 @@ _main() {
     #original
     #exec "$@"
 
-	myapp & exec "$@"
-    #exec "$@"
+	#works fine
+	#myapp & exec "$@"
+
+	#kill both on ctrl-c
+    myapp & exec "$@" && kill $!
 }
 
 # If we are sourced from elsewhere, don't perform any further actions
