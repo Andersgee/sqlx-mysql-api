@@ -274,6 +274,13 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                             Ok(x) => Ok(serde_json::json!(["Json", x])),
                         }
                     }
+                    "ENUM" => {
+                        //for introspection
+                        match <String as Decode<MySql>>::decode(valueref) {
+                            Err(err) => Err(Error::Decode(err.to_string())),
+                            Ok(x) => Ok(serde_json::json!(x)),
+                        }
+                    }
                     _ => {
                         //println!("default parsing database type '{:?}' as string", type_name);
                         //let x = <String as Decode<MySql>>::decode(valueref).unwrap_or_default();
