@@ -1,9 +1,7 @@
 use crate::{base64, error::Error};
 use chrono::{DateTime, Utc};
 
-//use geozero::{wkb::{self, Ewkb},ToWkt,};
-//use geo_types::*;
-//use wkb::*;
+use geo_types::Geometry;
 use wkb::wkb_to_geom;
 
 use serde_json::{Map, Value};
@@ -306,8 +304,8 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                                     Err(Error::Decode("invalid wkb geometry parsing".to_string()))
                                 }
                                 Ok(geom) => {
-                                    println!("decoded to geometry, geom: {:#?}", geom);
-                                    Ok(serde_json::json!("hmm geojson here maybe"))
+                                    //println!("decoded to geometry, geom: {:#?}", geom);
+                                    Ok(serde_json::json!(geom))
                                 }
                             },
                         }
