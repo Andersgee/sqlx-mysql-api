@@ -7,18 +7,15 @@ version: "3.8"
 
 services:
   db:
-    image: andersgee/testimage-sqlx-mysql-api:0.1
+    image: mysql:8.0
     restart: unless-stopped
     env_file:
       - ./.env
     ports:
-      - 4000:4000
+      #- 4000:3000
       - 3306:3306
     volumes:
       - db-data:/var/lib/mysql
-    build:
-      context: .
-      dockerfile: ./Dockerfile
 
 volumes:
   db-data:

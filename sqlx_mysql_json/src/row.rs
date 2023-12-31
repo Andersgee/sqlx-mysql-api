@@ -1,5 +1,11 @@
 use crate::{base64, error::Error};
 use chrono::{DateTime, Utc};
+
+//use geozero::{wkb::{self, Ewkb},ToWkt,};
+//use geo_types::*;
+//use wkb::*;
+use wkb::wkb_to_geom;
+
 use serde_json::{Map, Value};
 use sqlx::{
     mysql::{MySqlColumn, MySqlRow},
@@ -281,11 +287,36 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                             Ok(x) => Ok(serde_json::json!(x)),
                         }
                     }
+                    "GEOMETRY" => {
+                        //MySQL stores geometry values using 4 bytes to indicate the SRID
+                        //followed by the WKB representation of the value.
+                        //The LENGTH() function returns the space in bytes required for value storage.
+                        //https://dev.mysql.com/doc/refman/8.0/en/gis-data-formats.html#gis-wkb-format
+                        //WKB uses 1-byte unsigned integers, 4-byte unsigned integers, and 8-byte double-precision numbers (IEEE 754 format). A byte is eight bits.
+
+                        //IMPORTANT: The first 4 bytes defines the SRID aka coordinate system
+                        //the rest is well-known-bytes geometry
+                        //let bytes = <Vec<u8> as Decode<MySql>>::decode(valueref).unwrap();
+                        //let hmmx = wkb_to_geom(&mut &bytes[4..]).unwrap();
+
+                        match <Vec<u8> as Decode<MySql>>::decode(valueref) {
+                            Err(err) => Err(Error::Decode(err.to_string())),
+                            Ok(bytes) => match wkb_to_geom(&mut &bytes[4..]) {
+                                Err(_) => {
+                                    Err(Error::Decode("invalid wkb geometry parsing".to_string()))
+                                }
+                                Ok(geom) => {
+                                    println!("decoded to geometry, geom: {:#?}", geom);
+                                    Ok(serde_json::json!("hmm geojson here maybe"))
+                                }
+                            },
+                        }
+                    }
                     _ => {
-                        //println!("default parsing database type '{:?}' as string", type_name);
-                        //let x = <String as Decode<MySql>>::decode(valueref).unwrap_or_default();
-                        //serde_json::json!(x)
-                        Err(Error::Decode(format!("unsupported type {:?}", type_name)))
+                        println!("default parsing database type '{:?}' as string", type_name);
+                        let x = <String as Decode<MySql>>::decode(valueref).unwrap_or_default();
+                        Ok(serde_json::json!(x))
+                        //Err(Error::Decode(format!("unsupported type {:?}", type_name)))
                     }
                 }
             }

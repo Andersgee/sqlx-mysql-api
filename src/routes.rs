@@ -9,12 +9,12 @@ struct Q {
 
 #[get("/")]
 async fn root(pool: web::Data<MySqlPool>, query: web::Query<Q>) -> impl Responder {
-    println!("query.q: {:?}", query.q);
+    //println!("query.q: {:?}", query.q);
     //general purpose "query via http"
     let result = sqlx_mysql_json::query(&pool, &query.q).await;
     match result {
         Ok(value) => {
-            println!("responding with value: {:?}", value);
+            //println!("responding with value: {:?}", value);
             HttpResponse::Ok().json(value)
         }
         Err(err) => HttpResponse::BadRequest().json(err.to_string()),
@@ -28,7 +28,7 @@ pub async fn transaction(
 ) -> impl Responder {
     //multiple queries in sequence, with rollback if one fails.
     //cant really use results of earlier queries in later queries here like in a real transaction
-    println!("transaction, queries: {:?}", queries);
+    //println!("transaction, queries: {:?}", queries);
 
     match pool.acquire().await {
         Err(_) => HttpResponse::InternalServerError()
