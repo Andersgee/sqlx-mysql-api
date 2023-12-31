@@ -42,6 +42,7 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Object(_) => {
             //parameter should not be object.
             Err(Error::Parameter("parameter value should not be object".to_string()))
+            //perhaps allow geojson objects..
         }
         Value::Bool(x) => {
             //better to use  "IS TRUE" or "IS FALSE" in sql rather than parameter.
@@ -122,7 +123,7 @@ fn tuple_type(v: Vec<serde_json::Value>) -> Result<TupleType, Error> {
 }
 
 fn default_tuple_type_error() -> Error {
-    Error::TupleType("parameter value should not be array unless one of [\"Date\",\"str\"], [\"BigInt\",\"str\"], [\"Bytes\",\"str\"]".to_string())
+    Error::TupleType("parameter value should not be array unless one of [\"Date\",\"str\"], [\"BigInt\",\"str\"], [\"Base64\",\"str\"]".to_string())
 }
 
 /// "2023-12-12T19:49:38.415Z" => "2023-12-12 19:49:38.415"
