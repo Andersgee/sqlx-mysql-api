@@ -304,14 +304,11 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                                     Err(Error::Decode("invalid wkb geometry parsing".to_string()))
                                 }
                                 Ok(geom) => {
-                                    //let geo_geometry: geo_types::Geometry<f64> = geo_types::Geometry::from(geo_point);
-
-                                    //println!("decoded to geometry, geom: {:#?}", geom);
-
-                                    //Ok(serde_json::json!(geom))
-
-                                    //println!("decoded to geojson, value: {:#?}", value.to_string());
-                                    Ok(serde_json::json!(geojson::Value::from(&geom).to_string()))
+                                    let geojsonstring = geojson::Value::from(&geom).to_string();
+                                    match serde_json::from_str(&geojsonstring) {
+                                        Err(err) => Err(Error::Decode(err.to_string())),
+                                        Ok(value) => Ok(value),
+                                    }
                                 }
                             },
                         }

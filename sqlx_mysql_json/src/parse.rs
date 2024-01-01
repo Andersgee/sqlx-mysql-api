@@ -46,16 +46,18 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
             
             match <geojson::Value>::try_from(obj) {
                 Err(_) => Err(Error::Parameter("jsonvalue is not geojson".to_string())),
-                Ok(geovalue) => {
-                    match <geo_types::Geometry>::try_from(geovalue) {
-                        Err(_) => Err(Error::Parameter("geojson is not geotype".to_string())),
-                        Ok(geotype) => {
-                            match geom_to_wkb(&geotype) {
-                                Err(_) => Err(Error::Parameter("failed wkb from geotype".to_string())),
-                                Ok(x) => Ok(Parameter::Bytes(x)),
-                            }
-                        },
-                    }
+                Ok(geojsonvalue) => {
+                    Ok(Parameter::Str(geojsonvalue.to_string()))
+
+                    //match <geo_types::Geometry>::try_from(geojsonvalue) {
+                    //    Err(_) => Err(Error::Parameter("geojson is not geotype".to_string())),
+                    //    Ok(geotype) => {
+                    //        match geom_to_wkb(&geotype) {
+                    //            Err(_) => Err(Error::Parameter("failed wkb from geotype".to_string())),
+                    //            Ok(x) => Ok(Parameter::Bytes(x)),
+                    //        }
+                    //    },
+                    //}
                 },
             }
         }
