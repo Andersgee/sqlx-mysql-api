@@ -39,10 +39,9 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Null => {
             Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
         }
-        Value::Object(_) => {
+        Value::Object(obj) => {
             //parameter should not be object.
             Err(Error::Parameter("parameter value should not be object".to_string()))
-            //perhaps allow geojson objects..
         }
         Value::Bool(x) => {
             //better to use  "IS TRUE" or "IS FALSE" in sql rather than parameter.

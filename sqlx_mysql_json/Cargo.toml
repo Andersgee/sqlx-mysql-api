@@ -11,8 +11,9 @@ chrono = "0.4.31"
 serde = "1.0.193"
 serde_json = "1.0.108"
 sqlx = {version = "0.7.3", features = ["mysql", "chrono", "json", "bigdecimal"]}
-geo-types = {version = "0.7.12", features = ["serde"]}
+#geo-types = {version = "0.7.12", features = ["serde"]}
+geo-types = {version = "0.7.12"}
+geojson = {version = "0.24.1", features = ["geo-types"]}
 wkb = "0.7.1"
-
 
 
