@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde_json::Value;
+use wkb::{wkb_to_geom,geom_to_wkb};
 
 use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
 
@@ -35,13 +36,30 @@ pub fn string_to_query(string: &String) -> Result<Query, Error> {
 }
 
 pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
+    
     match value {
         Value::Null => {
             Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
         }
         Value::Object(obj) => {
-            //parameter should not be object.
-            Err(Error::Parameter("parameter value should not be object".to_string()))
+            //Err(Error::Parameter("parameter value should not be object".to_string()))
+            
+            let r: Result<geojson::Value,_> = obj.try_into();
+            match r {
+                Err(_) => Err(Error::Parameter("jsonvalue is not geojson".to_string())),
+                Ok(geovalue) => {
+                    let b: Result<geo_types::Geometry,_> = geo_types::Geometry::try_from(geovalue);
+                    match b {
+                        Err(_) => Err(Error::Parameter("geojson is not geotype".to_string())),
+                        Ok(geotype) => {
+                            match geom_to_wkb(&geotype) {
+                                Err(_) => Err(Error::Parameter("failed wkb from geotype".to_string())),
+                                Ok(x) => Ok(Parameter::Bytes(x)),
+                            }
+                        },
+                    }
+                },
+            }
         }
         Value::Bool(x) => {
             //better to use  "IS TRUE" or "IS FALSE" in sql rather than parameter.

@@ -2,7 +2,7 @@ use crate::{base64, error::Error};
 use chrono::{DateTime, Utc};
 
 use geo_types::Geometry;
-use wkb::wkb_to_geom;
+use wkb::{geom_to_wkb, wkb_to_geom};
 
 use serde_json::{Map, Value};
 use sqlx::{
