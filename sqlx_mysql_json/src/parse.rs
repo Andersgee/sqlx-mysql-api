@@ -44,12 +44,10 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Object(obj) => {
             //Err(Error::Parameter("parameter value should not be object".to_string()))
             
-            let r: Result<geojson::Value,_> = obj.try_into();
-            match r {
+            match <geojson::Value>::try_from(obj) {
                 Err(_) => Err(Error::Parameter("jsonvalue is not geojson".to_string())),
                 Ok(geovalue) => {
-                    let b: Result<geo_types::Geometry,_> = geo_types::Geometry::try_from(geovalue);
-                    match b {
+                    match <geo_types::Geometry>::try_from(geovalue) {
                         Err(_) => Err(Error::Parameter("geojson is not geotype".to_string())),
                         Ok(geotype) => {
                             match geom_to_wkb(&geotype) {
