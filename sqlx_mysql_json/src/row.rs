@@ -299,18 +299,21 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
 
                         match <Vec<u8> as Decode<MySql>>::decode(valueref) {
                             Err(err) => Err(Error::Decode(err.to_string())),
-                            Ok(bytes) => match wkb_to_geom(&mut &bytes[4..]) {
-                                Err(_) => {
-                                    Err(Error::Decode("invalid wkb geometry parsing".to_string()))
-                                }
-                                Ok(geom) => {
-                                    let geojsonstring = geojson::Value::from(&geom).to_string();
-                                    match serde_json::from_str(&geojsonstring) {
-                                        Err(err) => Err(Error::Decode(err.to_string())),
-                                        Ok(value) => Ok(value),
+                            Ok(bytes) => {
+                                //println!("bytes: {:?}", bytes);
+                                match wkb_to_geom(&mut &bytes[4..]) {
+                                    Err(_) => Err(Error::Decode(
+                                        "invalid wkb geometry parsing".to_string(),
+                                    )),
+                                    Ok(geom) => {
+                                        let geojsonstring = geojson::Value::from(&geom).to_string();
+                                        match serde_json::from_str(&geojsonstring) {
+                                            Err(err) => Err(Error::Decode(err.to_string())),
+                                            Ok(value) => Ok(value),
+                                        }
                                     }
                                 }
-                            },
+                            }
                         }
                     }
                     _ => {
@@ -327,6 +330,8 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Read;
+
     use crate::wkb::wkb_to_geom;
 
     use super::*;
@@ -347,5 +352,12 @@ mod tests {
         } else {
             assert!(false);
         }
+    }
+
+    #[test]
+    fn spatial_reference_system_id() {
+        let expected: Vec<u8> = vec![230, 16, 0, 0];
+        let default_id: u32 = 4326;
+        assert_eq!(expected, default_id.to_le_bytes());
     }
 }

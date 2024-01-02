@@ -2,6 +2,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
+use crate::{wkb::geom_to_wkb};
 
 #[derive(Deserialize, Debug)]
 pub struct JsonQuery {
@@ -43,10 +44,44 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Object(obj) => {
             //Err(Error::Parameter("parameter value should not be object".to_string()))
             
+            //Ok(Parameter::Str(geojsonvalue.to_string()))
+
+            //so actually, lets just write the WKB instead
+            //but with [230, 16, 0, 0] as first 4 bytes aka SRS_ID 4326 which it seems to write by default when using from geojson stuff
+            //
             match <geojson::Value>::try_from(obj) {
                 Err(_) => Err(Error::Parameter("jsonvalue is not geojson".to_string())),
                 Ok(geojsonvalue) => {
-                    Ok(Parameter::Str(geojsonvalue.to_string()))
+
+                    match <geo_types::Geometry>::try_from(geojsonvalue) {
+                        Err(_) => Err(Error::Parameter("geojsonvalue is not geometry".to_string())),
+                        Ok(geom) => {
+                            match geom_to_wkb(&geom) {
+                                Err(_) => Err(Error::Parameter("geometry is not wkb".to_string())),
+                                Ok(bytes) => {
+                                    
+                                    //mysql just uses the wkb as internal format but with the first 4 bytes being SRS_ID
+                                    //[230, 16, 0, 0] aka SRS_ID=4326 representing SRS_NAME="WGS 84" is what it wrote by default when using ST_GeomFromGeoJSON() sql function
+                                    //so lets do the same
+
+                                    let mut mysql_spatial_type_bytes:Vec<u8> = Vec::with_capacity(bytes.len() + 4);
+                                    mysql_spatial_type_bytes.push(230);
+                                    mysql_spatial_type_bytes.push(16);
+                                    mysql_spatial_type_bytes.push(0);
+                                    mysql_spatial_type_bytes.push(0);
+                                    for b in bytes {
+                                        mysql_spatial_type_bytes.push(b);
+                                    }
+
+                                    //let mut mysql_spatial_type_bytes:Vec<u8> = vec![230, 16, 0, 0];
+                                    //mysql_spatial_type_bytes.append(&mut bytes);
+
+                                    Ok(Parameter::Bytes(mysql_spatial_type_bytes))
+                                }
+                            }
+                        },
+                    }
+                                        
                 },
             }
         }
