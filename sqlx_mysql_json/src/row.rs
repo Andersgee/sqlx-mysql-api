@@ -299,25 +299,18 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
 
                         match <Vec<u8> as Decode<MySql>>::decode(valueref) {
                             Err(err) => Err(Error::Decode(err.to_string())),
-                            Ok(bytes) => {
-                                let a = 2;
-                                println!("bytes {:?}", bytes);
-
-                                match wkb_to_geom(&mut &bytes[4..]) {
-                                    Err(_) => Err(Error::Decode(
-                                        "invalid wkb geometry parsing".to_string(),
-                                    )),
-                                    Ok(geom) => {
-                                        println!("geom: {:?}", geom);
-                                        let geojsonstring = geojson::Value::from(&geom).to_string();
-                                        println!("geojsonstring: {:?}", geojsonstring);
-                                        match serde_json::from_str(&geojsonstring) {
-                                            Err(err) => Err(Error::Decode(err.to_string())),
-                                            Ok(value) => Ok(value),
-                                        }
+                            Ok(bytes) => match wkb_to_geom(&mut &bytes[4..]) {
+                                Err(_) => {
+                                    Err(Error::Decode("invalid wkb geometry parsing".to_string()))
+                                }
+                                Ok(geom) => {
+                                    let geojsonstring = geojson::Value::from(&geom).to_string();
+                                    match serde_json::from_str(&geojsonstring) {
+                                        Err(err) => Err(Error::Decode(err.to_string())),
+                                        Ok(value) => Ok(value),
                                     }
                                 }
-                            }
+                            },
                         }
                     }
                     _ => {
