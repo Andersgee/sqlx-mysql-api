@@ -14,6 +14,6 @@ sqlx = {version = "0.7.3", features = ["mysql", "chrono", "json", "bigdecimal"]}
 #geo-types = {version = "0.7.12", features = ["serde"]}
 geo-types = {version = "0.7.12"}
 geojson = {version = "0.24.1", features = ["geo-types"]}
-wkb = "0.7.1"
-
+#wkb = "0.7.1" #copy paste this instead. its good except multipoint is parsed wrong
+num-traits = "0.2.17"
 

@@ -1,8 +1,8 @@
-use crate::{base64, error::Error};
+use crate::{base64, error::Error, wkb::wkb_to_geom};
 use chrono::{DateTime, Utc};
 
 use geo_types::Geometry;
-use wkb::{geom_to_wkb, wkb_to_geom};
+//use wkb::{geom_to_wkb, wkb_to_geom};
 
 use serde_json::{Map, Value};
 use sqlx::{
@@ -299,18 +299,25 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
 
                         match <Vec<u8> as Decode<MySql>>::decode(valueref) {
                             Err(err) => Err(Error::Decode(err.to_string())),
-                            Ok(bytes) => match wkb_to_geom(&mut &bytes[4..]) {
-                                Err(_) => {
-                                    Err(Error::Decode("invalid wkb geometry parsing".to_string()))
-                                }
-                                Ok(geom) => {
-                                    let geojsonstring = geojson::Value::from(&geom).to_string();
-                                    match serde_json::from_str(&geojsonstring) {
-                                        Err(err) => Err(Error::Decode(err.to_string())),
-                                        Ok(value) => Ok(value),
+                            Ok(bytes) => {
+                                let a = 2;
+                                println!("bytes {:?}", bytes);
+
+                                match wkb_to_geom(&mut &bytes[4..]) {
+                                    Err(_) => Err(Error::Decode(
+                                        "invalid wkb geometry parsing".to_string(),
+                                    )),
+                                    Ok(geom) => {
+                                        println!("geom: {:?}", geom);
+                                        let geojsonstring = geojson::Value::from(&geom).to_string();
+                                        println!("geojsonstring: {:?}", geojsonstring);
+                                        match serde_json::from_str(&geojsonstring) {
+                                            Err(err) => Err(Error::Decode(err.to_string())),
+                                            Ok(value) => Ok(value),
+                                        }
                                     }
                                 }
-                            },
+                            }
                         }
                     }
                     _ => {
@@ -321,6 +328,31 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                     }
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::wkb::wkb_to_geom;
+
+    use super::*;
+
+    #[test]
+    fn mysqlmultipointreading() {
+        let expected: geo_types::MultiPoint<_> = vec![(6., 5.), (2., 9.)].into();
+        //let bytes: Vec<u8> = vec![230, 16, 0, 0, 1, 4, 0, 0, 0, 2, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 64, 0,0, 0, 0, 0, 0, 20, 64, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 34,64];
+        //without first 4 bytes
+        let bytes: Vec<u8> = vec![
+            1, 4, 0, 0, 0, 2, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 64, 0, 0, 0, 0, 0, 0,
+            20, 64, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 34, 64,
+        ];
+        let geom = wkb_to_geom(&mut bytes.as_slice()).unwrap();
+
+        if let Geometry::MultiPoint(mp) = geom {
+            assert_eq!(expected, mp);
+        } else {
+            assert!(false);
         }
     }
 }

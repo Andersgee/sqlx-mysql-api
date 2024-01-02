@@ -6,6 +6,7 @@ pub mod error;
 mod execute;
 mod parse;
 pub mod row;
+mod wkb;
 
 /// calls `fetch_all()` for SELECT queries, otherwise calls `execute()`
 ///

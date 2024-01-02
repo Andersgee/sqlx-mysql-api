@@ -1,6 +1,5 @@
 use serde::Deserialize;
 use serde_json::Value;
-use wkb::{wkb_to_geom,geom_to_wkb};
 
 use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
 
