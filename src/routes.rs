@@ -34,8 +34,10 @@ pub async fn transaction(
     // so they are commited even on error / rollback
     //
     // btw, apparently, this auto commit behaviour also applies to regular queries unless explicitly doing "SET autocommit=0"
-    // pseudo quote for docs:
-    // "all other databases has autocommit=0 as default, but mysql has autocommit=1 as default because... no reason"
+    // tldr from mysql8 reference manual (pseudo quotes):
+    // "autocommit=1 is not recommended for transactions"
+    // "all other databases has autocommit=0 as default"
+    // "mysql has autocommit=1 as default because... no reason"
 
     //println!("transaction, queries: {:?}", queries);
     let mut results: Vec<serde_json::Value> = vec![];
