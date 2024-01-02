@@ -26,9 +26,19 @@ pub async fn transaction(
     pool: web::Data<MySqlPool>,
     queries: web::Json<Vec<String>>,
 ) -> impl Responder {
-    //multiple queries in sequence, with rollback if one fails.
-    //cant really use results of earlier queries in later queries here like in a real transaction
+    // multiple queries in sequence, with rollback if one fails.
+    // cant really use results of earlier queries in later queries here like in a real transaction
+    //
+    // also "data definition" stuff like CREATE and ALTER etc all do implicit
+    // commits and can not be rolled back, see: https://dev.mysql.com/doc/refman/8.0/en/implicit-commit.html
+    // so they are commited even on error / rollback
+    //
+    // btw, apparently, this auto commit behaviour also applies to regular queries unless explicitly doing "SET autocommit=0"
+    // pseudo quote for docs:
+    // "all other databases has autocommit=0 as default, but mysql has autocommit=1 as default because... no reason"
+
     //println!("transaction, queries: {:?}", queries);
+    let mut results: Vec<serde_json::Value> = vec![];
 
     match pool.acquire().await {
         Err(_) => HttpResponse::InternalServerError()
@@ -38,10 +48,20 @@ pub async fn transaction(
                 HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
             }
             Ok(mut tx) => {
+                match sqlx::query("SET autocommit=0").execute(&mut *tx).await {
+                    Ok(_) => {}
+                    Err(_) => {
+                        return HttpResponse::InternalServerError()
+                            .json("could not set autocommit=0 at start of transaction".to_string())
+                    }
+                }
+
                 for q in queries.into_inner() {
                     //see example of transaction here: https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
                     match sqlx_mysql_json::execute_in_transaction(&mut tx, &q).await {
-                        Ok(_) => {}
+                        Ok(result) => {
+                            results.push(result);
+                        }
                         Err(err) => match tx.rollback().await {
                             Ok(_) => {
                                 return HttpResponse::BadRequest()
@@ -57,7 +77,7 @@ pub async fn transaction(
                     }
                 }
                 match tx.commit().await {
-                    Ok(_) => HttpResponse::Ok().json("Transaction committed."),
+                    Ok(_) => HttpResponse::Ok().json(results),
                     Err(err) => {
                         return HttpResponse::InternalServerError().json(format!(
                             "Commit failed (never comitted, implicitly rolled back). err: {:?}",

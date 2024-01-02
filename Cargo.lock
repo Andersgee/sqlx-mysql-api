@@ -1769,6 +1769,7 @@ dependencies = [
  "derive_more",
  "dotenv",
  "serde",
+ "serde_json",
  "sqlx",
  "sqlx_mysql_json",
  "tokio",

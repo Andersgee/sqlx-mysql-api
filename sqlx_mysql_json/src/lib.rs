@@ -10,17 +10,28 @@ mod wkb;
 
 /// calls `fetch_all()` for SELECT queries, otherwise calls `execute()`
 ///
-/// returns a json object like this:
+/// returns a query result json object like this:
 ///```ts
 ///{
-/// /** This is defined for insert, update and delete queries and contains the number of rows the query inserted/updated/deleted. */
-/// numAffectedRows?: ["BigInt","number"],
-/// /** This is defined for update queries and contains the number of rows the query changed. */
-/// numChangedRows?: ["BigInt", "number"],
-/// /** This is defined for insert queries */
-/// insertId?: ["BigInt","number",
-/// /** The rows returned by the query. This is always defined and is empty if the query returned no rows. */
-/// rows: [];
+///  /**
+///   * This is defined for insert, update and delete queries and
+///   * contains the number of rows the query inserted/updated/deleted.
+///   */
+///  numAffectedRows?: bigint;
+///  /**
+///   * This is defined for update queries and contains the number of
+///   * rows the query changed.
+///   */
+///  numChangedRows?: bigint;
+///  /**
+///   * This is defined for insert queries
+///   */
+///  insertId?: bigint;
+///  /**
+///   * The rows returned by the query.
+///   * This is always defined and is empty if the query returned no rows.
+///   */
+///  rows: [];
 ///}
 /// ```
 pub async fn query(pool: &MySqlPool, s: &String) -> Result<serde_json::Value, Error> {
