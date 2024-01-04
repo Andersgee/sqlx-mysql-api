@@ -98,6 +98,30 @@ pub async fn execute_in_transaction(
     }
 }
 
+/// ignores query.parameters, think raw query.
+pub async fn execute_in_transaction_unprepared(
+    tx: &mut Transaction<'_, MySql>,
+    s: &String,
+) -> Result<serde_json::Value, Error> {
+    let query = parse::string_to_query(s)?;
+    match execute::execute_in_transaction_unprepared(tx, &query.sql).await {
+        Err(err) => Err(Error::Sqlx(err.to_string())),
+        Ok(result) => {
+            let num_affected_rows = result.rows_affected().to_string();
+            let insert_id = result.last_insert_id().to_string();
+
+            let value = serde_json::json!({
+                "numAffectedRows": ["BigInt", num_affected_rows],
+                "numChangedRows": ["BigInt",num_affected_rows],
+                "insertId": ["BigInt", insert_id],
+                "rows": []
+            });
+
+            Ok(value)
+        }
+    }
+}
+
 fn is_select_query(sql: &String) -> bool {
     let first_word = sql.split_whitespace().next();
     match first_word {

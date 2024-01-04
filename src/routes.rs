@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::Deserialize;
-use sqlx::{Acquire, MySqlPool};
+use sqlx::{Acquire, Executor, MySqlPool};
 
 #[derive(Deserialize)]
 struct Q {
@@ -50,7 +50,8 @@ pub async fn transaction(
                 HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
             }
             Ok(mut tx) => {
-                match sqlx::query("SET autocommit=0").execute(&mut *tx).await {
+                //match sqlx::query("SET autocommit=0").execute(&mut *tx).await {
+                match tx.execute("SET autocommit=0").await {
                     Ok(_) => {}
                     Err(_) => {
                         return HttpResponse::InternalServerError()
@@ -61,6 +62,63 @@ pub async fn transaction(
                 for q in queries.into_inner() {
                     //see example of transaction here: https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
                     match sqlx_mysql_json::execute_in_transaction(&mut tx, &q).await {
+                        Ok(result) => {
+                            results.push(result);
+                        }
+                        Err(err) => match tx.rollback().await {
+                            Ok(_) => {
+                                return HttpResponse::BadRequest()
+                                    .json(format!("Rolled back, err: {:?}", err.to_string()))
+                            }
+                            Err(rollbackerr) => {
+                                return HttpResponse::InternalServerError().json(format!(
+                                    "Explicit rollback failed (never comitted, implicitly rolled back). err: {:?}",
+                                    rollbackerr.to_string()
+                                ))
+                            }
+                        },
+                    }
+                }
+                match tx.commit().await {
+                    Ok(_) => HttpResponse::Ok().json(results),
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(format!(
+                            "Commit failed (never comitted, implicitly rolled back). err: {:?}",
+                            err.to_string()
+                        ))
+                    }
+                }
+            }
+        },
+    }
+}
+
+#[post("/transactionunprepared")]
+pub async fn transactionunprepared(
+    pool: web::Data<MySqlPool>,
+    queries: web::Json<Vec<String>>,
+) -> impl Responder {
+    let mut results: Vec<serde_json::Value> = vec![];
+
+    match pool.acquire().await {
+        Err(_) => HttpResponse::InternalServerError()
+            .json("couldnt acquire connection from pool".to_string()),
+        Ok(mut conn) => match conn.begin().await {
+            Err(_) => {
+                HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
+            }
+            Ok(mut tx) => {
+                match tx.execute("SET autocommit=0").await {
+                    Ok(_) => {}
+                    Err(_) => {
+                        return HttpResponse::InternalServerError()
+                            .json("could not set autocommit=0 at start of transaction".to_string())
+                    }
+                }
+
+                for q in queries.into_inner() {
+                    //see example of transaction here: https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
+                    match sqlx_mysql_json::execute_in_transaction_unprepared(&mut tx, &q).await {
                         Ok(result) => {
                             results.push(result);
                         }

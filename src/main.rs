@@ -51,6 +51,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(auth)
             .service(routes::root)
             .service(routes::transaction)
+            .service(routes::transactionunprepared)
     })
     .bind(addrs)?
     .run()
