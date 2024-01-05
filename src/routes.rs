@@ -50,14 +50,13 @@ pub async fn transaction(
                 HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
             }
             Ok(mut tx) => {
-                //match sqlx::query("SET autocommit=0").execute(&mut *tx).await {
-                match tx.execute("SET autocommit=0").await {
-                    Ok(_) => {}
-                    Err(_) => {
-                        return HttpResponse::InternalServerError()
-                            .json("could not set autocommit=0 at start of transaction".to_string())
-                    }
-                }
+                //                match tx.execute("SET autocommit=0").await {
+                //                    Ok(_) => {}
+                //                    Err(_) => {
+                //                        return HttpResponse::InternalServerError()
+                //                            .json("could not set autocommit=0 at start of transaction".to_string())
+                //                    }
+                //                }
 
                 for q in queries.into_inner() {
                     //see example of transaction here: https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
@@ -108,12 +107,21 @@ pub async fn transactionunprepared(
                 HttpResponse::InternalServerError().json("couldnt begin transaction".to_string())
             }
             Ok(mut tx) => {
+                //can we just set these as global [mysqld] option (docker.cnf) or not?..
                 match tx.execute("SET autocommit=0").await {
                     Ok(_) => {}
                     Err(_) => {
                         return HttpResponse::InternalServerError()
                             .json("could not set autocommit=0 at start of transaction".to_string())
                     }
+                }
+
+                match tx.execute("SET information_schema_stats_expiry=0").await {
+                    Ok(_) => {}
+                    Err(_) => return HttpResponse::InternalServerError().json(
+                        "could not set information_schema_stats_expiry=0 at start of transaction"
+                            .to_string(),
+                    ),
                 }
 
                 for q in queries.into_inner() {

@@ -2,4 +2,9 @@
 host_cache_size=0
 skip-name-resolve
 
-mysqlx=0 
+#https://dev.mysql.com/doc/refman/8.0/en/x-plugin-options-system-variables.html#option_mysqld_mysqlx
+mysqlx=0
+#https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_information_schema_stats_expiry
+#information_schema_stats_expiry=0
+#https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit
+#autocommit=0
