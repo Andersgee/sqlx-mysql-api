@@ -34,7 +34,7 @@ fn auth_password() -> &'static str {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    println!("starting http api (tag 0.23)");
+    println!("starting http api (tag 0.3)");
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("expected DATABASE_URL in env");
     let addrs = env::var("DB_HTTP_LISTEN_ADRESS").expect("expected DB_HTTP_LISTEN_ADRESS in env");
