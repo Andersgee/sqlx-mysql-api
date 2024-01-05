@@ -4,7 +4,7 @@ mod routes;
 
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
 use dotenv::dotenv;
-use sqlx::MySqlPool;
+use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
 use std::{env, sync::OnceLock};
 
 //in javascript:
@@ -41,6 +41,7 @@ async fn main() -> std::io::Result<()> {
     let _x = env::var("DB_HTTP_AUTH_PASSWORD").expect("expected DB_HTTP_AUTH_PASSWORD in env");
 
     println!("connecting to db and creating pool...");
+    //let pool = web::Data::new(MySqlPoolOptions::new().max_connections(10).connect(&database_url).await.unwrap());
     let pool = web::Data::new(MySqlPool::connect(&database_url).await.unwrap());
     println!("...pool created");
     println!("http api listening on '{:?}'", addrs);
