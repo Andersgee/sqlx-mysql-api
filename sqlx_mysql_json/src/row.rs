@@ -317,7 +317,7 @@ fn col_to_value(row: &MySqlRow, col: &MySqlColumn) -> Result<Value, Error> {
                         }
                     }
                     _ => {
-                        println!("default parsing database type '{:?}' as string", type_name);
+                        //println!("default parsing database type '{:?}' as string", type_name);
                         let x = <String as Decode<MySql>>::decode(valueref).unwrap_or_default();
                         Ok(serde_json::json!(x))
                         //Err(Error::Decode(format!("unsupported type {:?}", type_name)))

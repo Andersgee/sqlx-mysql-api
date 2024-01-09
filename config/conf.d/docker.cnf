@@ -4,6 +4,8 @@ skip-name-resolve
 
 #https://dev.mysql.com/doc/refman/8.0/en/x-plugin-options-system-variables.html#option_mysqld_mysqlx
 mysqlx=0
+#https://dev.mysql.com/doc/refman/8.0/en/binary-log.html
+skip-log-bin
 #https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit
 #autocommit=0
 #https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_information_schema_stats_expiry
