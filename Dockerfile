@@ -104,7 +104,8 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 #######################################
 COPY --from=builder /usr/local/cargo/bin/sqlx-mysql-api /usr/local/bin/myapp
-EXPOSE 3306 4000
+#EXPOSE 3306 4000
+EXPOSE 3306
 #######################################
 
 CMD ["mysqld"]

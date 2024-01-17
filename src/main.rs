@@ -4,7 +4,8 @@ mod routes;
 
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
 use dotenv::dotenv;
-use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
+//use sqlx::mysql::MySqlPoolOptions;
+use sqlx::MySqlPool;
 use std::{env, sync::OnceLock};
 
 //in javascript:
@@ -52,7 +53,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(auth)
             .service(routes::root)
             .service(routes::transaction)
-            .service(routes::transactionunprepared)
     })
     .bind(addrs)?
     .run()

@@ -1,5 +1,5 @@
 use error::Error;
-use sqlx::{MySql, MySqlPool, Transaction};
+use sqlx::{pool::PoolConnection, MySql, MySqlPool};
 
 mod base64;
 pub mod error;
@@ -75,36 +75,12 @@ pub async fn execute(pool: &MySqlPool, s: &String) -> Result<serde_json::Value, 
     }
 }
 
-pub async fn execute_in_transaction(
-    tx: &mut Transaction<'_, MySql>,
+pub async fn execute_in_connection(
+    pool: &mut PoolConnection<MySql>,
     s: &String,
 ) -> Result<serde_json::Value, Error> {
     let query = parse::string_to_query(s)?;
-    match execute::execute_in_transaction(tx, &query).await {
-        Err(err) => Err(Error::Sqlx(err.to_string())),
-        Ok(result) => {
-            let num_affected_rows = result.rows_affected().to_string();
-            let insert_id = result.last_insert_id().to_string();
-
-            let value = serde_json::json!({
-                "numAffectedRows": ["BigInt", num_affected_rows],
-                "numChangedRows": ["BigInt",num_affected_rows],
-                "insertId": ["BigInt", insert_id],
-                "rows": []
-            });
-
-            Ok(value)
-        }
-    }
-}
-
-/// ignores query.parameters, think raw query.
-pub async fn execute_in_transaction_unprepared(
-    tx: &mut Transaction<'_, MySql>,
-    s: &String,
-) -> Result<serde_json::Value, Error> {
-    let query = parse::string_to_query(s)?;
-    match execute::execute_in_transaction_unprepared(tx, &query.sql).await {
+    match execute::execute_in_connection(pool, &query).await {
         Err(err) => Err(Error::Sqlx(err.to_string())),
         Ok(result) => {
             let num_affected_rows = result.rows_affected().to_string();
@@ -126,7 +102,7 @@ fn is_select_query(sql: &String) -> bool {
     let first_word = sql.split_whitespace().next();
     match first_word {
         None => false,
-        Some(s) => s.to_lowercase().starts_with("select"),
+        Some(s) => s.trim().to_lowercase().starts_with("select"),
     }
 }
 

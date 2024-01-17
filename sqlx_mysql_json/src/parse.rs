@@ -2,7 +2,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
-use crate::{wkb::geom_to_wkb};
+use crate::wkb::geom_to_wkb;
 
 #[derive(Deserialize, Debug)]
 pub struct JsonQuery {
@@ -10,6 +10,7 @@ pub struct JsonQuery {
     parameters: Vec<Value>,
 }
 
+#[derive(Debug)]
 pub struct Query {
     pub sql: String,
     pub parameters: Vec<Parameter>,

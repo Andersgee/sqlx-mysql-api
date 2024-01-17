@@ -1,10 +1,12 @@
 use sqlx::{
     mysql::{MySqlQueryResult, MySqlRow},
-    Executor, MySql, MySqlPool, Transaction,
+    pool::PoolConnection,
+    MySql, MySqlPool,
 };
 
 use crate::parse::Query;
 
+#[derive(Debug)]
 pub enum Parameter {
     Int(i64),
     Uint(u64),
@@ -52,8 +54,8 @@ pub async fn execute(
     Ok(result)
 }
 
-pub async fn execute_in_transaction(
-    tx: &mut Transaction<'_, MySql>,
+pub async fn execute_in_connection(
+    conn: &mut PoolConnection<MySql>,
     query: &Query,
 ) -> Result<MySqlQueryResult, sqlx::error::Error> {
     let mut q = sqlx::query(&query.sql);
@@ -67,18 +69,6 @@ pub async fn execute_in_transaction(
             Parameter::Bytes(x) => q = q.bind(x),
         }
     }
-
-    let result = q.execute(&mut **tx).await?;
-    Ok(result)
-}
-
-/// unprepared querys dont have their query plan cached and dont have parameters
-/// https://github.com/launchbadge/sqlx#querying
-/// also a note about statements here https://docs.rs/sqlx/latest/sqlx/trait.Statement.html
-pub async fn execute_in_transaction_unprepared(
-    tx: &mut Transaction<'_, MySql>,
-    query: &str,
-) -> Result<MySqlQueryResult, sqlx::error::Error> {
-    let result = tx.execute(query).await?;
+    let result = q.execute(&mut **conn).await?;
     Ok(result)
 }
