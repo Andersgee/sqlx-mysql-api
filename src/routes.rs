@@ -73,9 +73,13 @@ pub async fn examples(pool: web::Data<MySqlPool>) -> impl Responder {
     //note: if database is running we can use macro eg query!() to verify sql with query!()
     //but it returns anonymous record so use regular query() when running
 
-    let r = sqlx::query!("UPDATE Event SET locationName = ? WHERE id = ?", "NULL", 1)
-        .fetch_all(pool.get_ref())
-        .await;
+    let r = sqlx::query!(
+        "UPDATE Event SET location = ? WHERE id = ?",
+        None::<String>,
+        1
+    )
+    .fetch_all(pool.get_ref())
+    .await;
 
     let result = sqlx::query("SELECT * FROM `FullPrismaTypes`")
         .fetch_all(pool.get_ref())
@@ -88,4 +92,4 @@ pub async fn examples(pool: web::Data<MySqlPool>) -> impl Responder {
         Err(err) => HttpResponse::BadRequest().json(err.to_string()),
     }
 }
- */
+*/

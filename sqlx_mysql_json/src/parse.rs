@@ -41,7 +41,7 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Null => {
             //Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
             //actually need to be able to SET columns to NULL, but when selecting the above is a good rule...
-            Ok(Parameter::Str("NULL".to_string()))
+            Ok(Parameter::NULL)
         }
         Value::Object(obj) => {
             //Err(Error::Parameter("parameter value should not be object".to_string()))

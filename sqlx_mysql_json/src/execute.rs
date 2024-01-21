@@ -14,6 +14,7 @@ pub enum Parameter {
     Str(String),
     Bool(bool),
     Bytes(Vec<u8>),
+    NULL,
 }
 
 pub async fn fetch_all(
@@ -29,6 +30,7 @@ pub async fn fetch_all(
             Parameter::Str(x) => q = q.bind(x),
             Parameter::Bool(x) => q = q.bind(x),
             Parameter::Bytes(x) => q = q.bind(x),
+            Parameter::NULL => q = q.bind(None::<String>),
         }
     }
     let rows = q.fetch_all(pool).await?;
@@ -48,6 +50,7 @@ pub async fn execute(
             Parameter::Str(x) => q = q.bind(x),
             Parameter::Bool(x) => q = q.bind(x),
             Parameter::Bytes(x) => q = q.bind(x),
+            Parameter::NULL => q = q.bind(None::<String>),
         }
     }
     let result = q.execute(pool).await?;
@@ -67,6 +70,7 @@ pub async fn execute_in_connection(
             Parameter::Str(x) => q = q.bind(x),
             Parameter::Bool(x) => q = q.bind(x),
             Parameter::Bytes(x) => q = q.bind(x),
+            Parameter::NULL => q = q.bind(None::<String>),
         }
     }
     let result = q.execute(&mut **conn).await?;
