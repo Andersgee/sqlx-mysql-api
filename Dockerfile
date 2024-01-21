@@ -5,8 +5,10 @@ RUN cargo install --path .
 
 #
 # expired? https://github.com/docker-library/mysql/blob/84ba05eaa75e1f0e1d33185e23f95a9cdc607b51/8.0/Dockerfile.debian
-# new? https://github.com/docker-library/mysql/blob/3e959c224b965b0dd92a59a1dedeb7c34a24f550/8.0/Dockerfile.debian
+# new: https://github.com/docker-library/mysql/blob/3e959c224b965b0dd92a59a1dedeb7c34a24f550/8.0/Dockerfile.debian
 # see supported tags and their respective Dockerfile here: https://hub.docker.com/_/mysql
+
+# new: https://github.com/docker-library/mysql/blob/ffa6423ca24168e4d96631b5e8f536ac826d2a5b/8.0/Dockerfile.debian
 
 FROM debian:bullseye-slim
 
@@ -70,7 +72,7 @@ RUN set -eux; \
 	rm -rf "$GNUPGHOME"
 
 ENV MYSQL_MAJOR 8.0
-ENV MYSQL_VERSION 8.0.35-1debian11
+ENV MYSQL_VERSION 8.0.36-1debian11
 
 RUN echo 'deb [ signed-by=/etc/apt/keyrings/mysql.gpg ] http://repo.mysql.com/apt/debian/ bullseye mysql-8.0' > /etc/apt/sources.list.d/mysql.list
 

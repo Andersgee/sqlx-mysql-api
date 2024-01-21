@@ -407,14 +407,14 @@ _main() {
 			mysql_socket_fix
 		fi
 	fi
-    #original
-    #exec "$@"
+	#original
+  #exec "$@"
 
 	#works fine
 	#myapp & exec "$@"
 
 	#kill both on ctrl-c
-    myapp & exec "$@" && kill $!
+  myapp & exec "$@" && kill $!
 }
 
 # If we are sourced from elsewhere, don't perform any further actions
