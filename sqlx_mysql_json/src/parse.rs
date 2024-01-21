@@ -1,8 +1,8 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
 use crate::wkb::geom_to_wkb;
+use crate::{base64::base64string_to_vecu8, error::Error, execute::Parameter};
 
 #[derive(Deserialize, Debug)]
 pub struct JsonQuery {
@@ -37,14 +37,15 @@ pub fn string_to_query(string: &String) -> Result<Query, Error> {
 }
 
 pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
-    
     match value {
         Value::Null => {
-            Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
+            //Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
+            //actually need to be able to SET columns to NULL, but when selecting the above is a good rule...
+            Ok(Parameter::Str("NULL".to_string()))
         }
         Value::Object(obj) => {
             //Err(Error::Parameter("parameter value should not be object".to_string()))
-            
+
             //Ok(Parameter::Str(geojsonvalue.to_string()))
 
             //so actually, lets just write the WKB instead
@@ -53,19 +54,18 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
             match <geojson::Value>::try_from(obj) {
                 Err(_) => Err(Error::Parameter("jsonvalue is not geojson".to_string())),
                 Ok(geojsonvalue) => {
-
                     match <geo_types::Geometry>::try_from(geojsonvalue) {
                         Err(_) => Err(Error::Parameter("geojsonvalue is not geometry".to_string())),
                         Ok(geom) => {
                             match geom_to_wkb(&geom) {
                                 Err(_) => Err(Error::Parameter("geometry is not wkb".to_string())),
                                 Ok(bytes) => {
-                                    
                                     //mysql just uses the wkb as internal format but with the first 4 bytes being SRS_ID
                                     //[230, 16, 0, 0] aka SRS_ID=4326 representing SRS_NAME="WGS 84" is what it wrote by default when using ST_GeomFromGeoJSON() sql function
                                     //so lets do the same
 
-                                    let mut mysql_spatial_type_bytes:Vec<u8> = Vec::with_capacity(bytes.len() + 4);
+                                    let mut mysql_spatial_type_bytes: Vec<u8> =
+                                        Vec::with_capacity(bytes.len() + 4);
                                     mysql_spatial_type_bytes.push(230);
                                     mysql_spatial_type_bytes.push(16);
                                     mysql_spatial_type_bytes.push(0);
@@ -80,10 +80,9 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
                                     Ok(Parameter::Bytes(mysql_spatial_type_bytes))
                                 }
                             }
-                        },
+                        }
                     }
-                                        
-                },
+                }
             }
         }
         Value::Bool(x) => {
@@ -102,7 +101,9 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
             } else if x.is_u64() {
                 Ok(Parameter::Uint(x.as_u64().unwrap()))
             } else {
-                Err(Error::Parameter("parameter value number is not f64, i64 or u64".to_string()))
+                Err(Error::Parameter(
+                    "parameter value number is not f64, i64 or u64".to_string(),
+                ))
             }
         }
         Value::String(x) => Ok(Parameter::Str(x)),
