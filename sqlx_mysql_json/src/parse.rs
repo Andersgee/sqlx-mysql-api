@@ -41,6 +41,7 @@ pub fn value_to_parameter(value: Value) -> Result<Parameter, Error> {
         Value::Null => {
             //Err(Error::Parameter("parameter value should not be null. put 'IS NULL or 'IS NOT NULL' in sql rather than parameter.".to_string()))
             //actually need to be able to SET columns to NULL, but when selecting the above is a good rule...
+            //in fact kysely transforms .where("mycol","is not",null) into "mycol IS NOT NULL" sql without sending null as parameter so no worries
             Ok(Parameter::NULL)
         }
         Value::Object(obj) => {
