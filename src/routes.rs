@@ -30,7 +30,6 @@ fn dbpool_from_header(headermap: &HeaderMap, pools: web::Data<Pools>) -> Option<
 async fn root(
     pools: web::Data<Pools>,
     req: actix_web::HttpRequest,
-    //db: web::Header<header::x>,
     query: web::Query<Q>,
 ) -> impl Responder {
     let p = dbpool_from_header(req.headers(), pools);
