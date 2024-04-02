@@ -4,8 +4,7 @@ mod routes;
 
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
 use dotenv::dotenv;
-//use sqlx::mysql::MySqlPoolOptions;
-use sqlx::MySqlPool;
+use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
 use std::{env, sync::OnceLock};
 
 //in javascript:
@@ -43,6 +42,8 @@ async fn main() -> std::io::Result<()> {
     println!("starting http api (tag 0.3)");
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("expected DATABASE_URL in env");
+    let database_url_musker =
+        env::var("DATABASE_URL_MUSKER").expect("expected DATABASE_URL_MUSKER in env");
     let addrs = env::var("DB_HTTP_LISTEN_ADRESS").expect("expected DB_HTTP_LISTEN_ADRESS in env");
     let _x = env::var("DB_HTTP_AUTH_PASSWORD").expect("expected DB_HTTP_AUTH_PASSWORD in env");
 
@@ -50,10 +51,14 @@ async fn main() -> std::io::Result<()> {
     //let pool = web::Data::new(MySqlPoolOptions::new().max_connections(10).connect(&database_url).await.unwrap());
 
     let pools = web::Data::new(Pools {
-        db: MySqlPool::connect("mysql://anders:somesecret@127.0.0.1:3306/db")
+        db: MySqlPoolOptions::new()
+            .max_connections(2) //default is 10
+            .connect(&database_url)
             .await
             .unwrap(),
-        musker: MySqlPool::connect("mysql://anders:somesecret@127.0.0.1:3306/musker")
+        musker: MySqlPoolOptions::new()
+            .max_connections(2)
+            .connect(&database_url_musker)
             .await
             .unwrap(),
     });
