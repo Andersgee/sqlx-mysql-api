@@ -16,9 +16,10 @@ struct Q {
 fn dbpool_from_header(headermap: &HeaderMap, pools: web::Data<Pools>) -> Option<MySqlPool> {
     let custom_header: &'static str = "db";
     let b = HeaderName::from_static(custom_header);
+    //default to "db" if no "db" header
     let d = HeaderValue::from_str("db").unwrap();
-    let db = headermap.get(b).unwrap_or(&d).to_str().unwrap();
 
+    let db = headermap.get(b).unwrap_or(&d).to_str().unwrap();
     match db {
         "db" => Some(pools.db.clone()),
         "musker" => Some(pools.musker.clone()),
