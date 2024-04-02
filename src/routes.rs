@@ -1,6 +1,6 @@
 use actix_web::{
     get,
-    http::header::{self, HeaderName, HeaderValue},
+    http::header::{self, HeaderMap, HeaderName, HeaderValue},
     post, web, HttpResponse, Responder,
 };
 use serde::Deserialize;
@@ -13,6 +13,19 @@ struct Q {
     q: String,
 }
 
+fn dbpool_from_header(headermap: &HeaderMap, pools: web::Data<Pools>) -> Option<MySqlPool> {
+    let custom_header: &'static str = "db";
+    let b = HeaderName::from_static(custom_header);
+    let d = HeaderValue::from_str("db").unwrap();
+    let db = headermap.get(b).unwrap_or(&d).to_str().unwrap();
+
+    match db {
+        "db" => Some(pools.db.clone()),
+        "musker" => Some(pools.musker.clone()),
+        _ => None,
+    }
+}
+
 #[get("/")]
 async fn root(
     pools: web::Data<Pools>,
@@ -20,16 +33,7 @@ async fn root(
     //db: web::Header<header::x>,
     query: web::Query<Q>,
 ) -> impl Responder {
-    let custom_header: &'static str = "db";
-    let b = HeaderName::from_static(custom_header);
-    let d = HeaderValue::from_str("db").unwrap();
-    let db = req.headers().get(b).unwrap_or(&d).to_str().unwrap();
-
-    let p: Option<MySqlPool> = match db {
-        "db" => Some(pools.db.clone()),
-        "musker" => Some(pools.musker.clone()),
-        _ => None,
-    };
+    let p = dbpool_from_header(req.headers(), pools);
 
     match p {
         None => HttpResponse::BadRequest().json("bad db header".to_string()),
