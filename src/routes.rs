@@ -1,6 +1,12 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{
+    get,
+    http::header::{self, HeaderName, HeaderValue},
+    post, web, HttpResponse, Responder,
+};
 use serde::Deserialize;
 use sqlx::{Executor, MySqlPool};
+
+use crate::Pools;
 
 #[derive(Deserialize)]
 struct Q {
@@ -8,12 +14,33 @@ struct Q {
 }
 
 #[get("/")]
-async fn root(pool: web::Data<MySqlPool>, query: web::Query<Q>) -> impl Responder {
-    //general purpose "query via http"
-    let result = sqlx_mysql_json::query(&pool, &query.q).await;
-    match result {
-        Ok(value) => HttpResponse::Ok().json(value),
-        Err(err) => HttpResponse::BadRequest().json(err.to_string()),
+async fn root(
+    pools: web::Data<Pools>,
+    req: actix_web::HttpRequest,
+    //db: web::Header<header::x>,
+    query: web::Query<Q>,
+) -> impl Responder {
+    let custom_header: &'static str = "db";
+    let b = HeaderName::from_static(custom_header);
+    let d = HeaderValue::from_str("db").unwrap();
+    let db = req.headers().get(b).unwrap_or(&d).to_str().unwrap();
+
+    let p: Option<MySqlPool> = match db {
+        "db" => Some(pools.db.clone()),
+        "musker" => Some(pools.musker.clone()),
+        _ => None,
+    };
+
+    match p {
+        None => HttpResponse::BadRequest().json("bad db header".to_string()),
+        Some(pool) => {
+            //general purpose "query via http"
+            let result = sqlx_mysql_json::query(&pool, &query.q).await;
+            match result {
+                Ok(value) => HttpResponse::Ok().json(value),
+                Err(err) => HttpResponse::BadRequest().json(err.to_string()),
+            }
+        }
     }
 }
 

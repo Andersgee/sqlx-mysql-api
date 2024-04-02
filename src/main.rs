@@ -33,6 +33,11 @@ fn auth_password() -> &'static str {
     PASSWORD.get_or_init(|| env::var("DB_HTTP_AUTH_PASSWORD").unwrap())
 }
 
+pub struct Pools {
+    db: MySqlPool,
+    musker: MySqlPool,
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     println!("starting http api (tag 0.3)");
@@ -43,13 +48,21 @@ async fn main() -> std::io::Result<()> {
 
     println!("connecting to db and creating pool...");
     //let pool = web::Data::new(MySqlPoolOptions::new().max_connections(10).connect(&database_url).await.unwrap());
-    let pool = web::Data::new(MySqlPool::connect(&database_url).await.unwrap());
+
+    let pools = web::Data::new(Pools {
+        db: MySqlPool::connect("mysql://anders:somesecret@127.0.0.1:3306/db")
+            .await
+            .unwrap(),
+        musker: MySqlPool::connect("mysql://anders:somesecret@127.0.0.1:3306/musker")
+            .await
+            .unwrap(),
+    });
     println!("...pool created");
     println!("http api listening on '{:?}'", addrs);
     HttpServer::new(move || {
         let auth = HttpAuthentication::basic(validate_credentials);
         App::new()
-            .app_data(pool.clone())
+            .app_data(pools.clone())
             .wrap(auth)
             .service(routes::root)
             .service(routes::transaction)
