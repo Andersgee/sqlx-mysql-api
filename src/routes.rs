@@ -13,7 +13,7 @@ struct Q {
     q: String,
 }
 
-fn dbpool_from_header(headermap: &HeaderMap, pools: web::Data<Pools>) -> Option<MySqlPool> {
+fn select_pool_by_header(headermap: &HeaderMap, pools: &web::Data<Pools>) -> Option<MySqlPool> {
     let custom_header: &'static str = "db";
     let b = HeaderName::from_static(custom_header);
     //default to "db" if no "db" header
@@ -33,7 +33,7 @@ async fn root(
     req: actix_web::HttpRequest,
     query: web::Query<Q>,
 ) -> impl Responder {
-    let p = dbpool_from_header(req.headers(), pools);
+    let p = select_pool_by_header(req.headers(), &pools);
 
     match p {
         None => HttpResponse::BadRequest().json("bad db header".to_string()),
