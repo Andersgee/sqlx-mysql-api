@@ -33,9 +33,7 @@ async fn root(
     req: actix_web::HttpRequest,
     query: web::Query<Q>,
 ) -> impl Responder {
-    let p = select_pool_by_header(req.headers(), &pools);
-
-    match p {
+    match select_pool_by_header(req.headers(), &pools) {
         None => HttpResponse::BadRequest().json("bad db header".to_string()),
         Some(pool) => {
             //general purpose "query via http"
@@ -50,46 +48,55 @@ async fn root(
 
 #[post("/transaction")]
 pub async fn transaction(
-    pool: web::Data<MySqlPool>,
+    pools: web::Data<Pools>,
+    req: actix_web::HttpRequest,
     queries: web::Json<Vec<String>>,
 ) -> impl Responder {
     let mut results: Vec<serde_json::Value> = vec![];
 
-    match pool.acquire().await {
-        Err(_) => HttpResponse::InternalServerError()
-            .json("couldnt acquire connection from pool".to_string()),
-        Ok(mut conn) => {
-            //let _ = conn.execute("SET autocommit=1").await; //default.. except when inside a START TRANSACTION?...
-            //let _ = conn.execute("SET autocommit=0").await;
-            //
-            match conn.execute("START TRANSACTION").await {
-                Err(_) => HttpResponse::InternalServerError().json("failed to START TRANSACTION"),
-                Ok(_) => {
-                    let mut should_rollback = false;
-                    for q in queries.into_inner() {
-                        match sqlx_mysql_json::execute_in_connection(&mut conn, &q).await {
-                            Ok(result) => {
-                                results.push(result);
+    match select_pool_by_header(req.headers(), &pools) {
+        None => HttpResponse::BadRequest().json("bad db header".to_string()),
+        Some(pool) => {
+            match pool.acquire().await {
+                Err(_) => HttpResponse::InternalServerError()
+                    .json("couldnt acquire connection from pool".to_string()),
+                Ok(mut conn) => {
+                    //let _ = conn.execute("SET autocommit=1").await; //default.. except when inside a START TRANSACTION?...
+                    //let _ = conn.execute("SET autocommit=0").await;
+                    //
+                    match conn.execute("START TRANSACTION").await {
+                        Err(_) => {
+                            HttpResponse::InternalServerError().json("failed to START TRANSACTION")
+                        }
+                        Ok(_) => {
+                            let mut should_rollback = false;
+                            for q in queries.into_inner() {
+                                match sqlx_mysql_json::execute_in_connection(&mut conn, &q).await {
+                                    Ok(result) => {
+                                        results.push(result);
+                                    }
+                                    Err(_) => {
+                                        should_rollback = true;
+                                        break;
+                                    }
+                                }
                             }
-                            Err(_) => {
-                                should_rollback = true;
-                                break;
+
+                            match should_rollback {
+                                true => match conn.execute("ROLLBACK").await {
+                                    Ok(_) => HttpResponse::BadRequest().json("ROLLBACK"),
+                                    Err(_) => HttpResponse::InternalServerError()
+                                        .json("failed to ROLLBACK"),
+                                },
+
+                                false => match conn.execute("COMMIT").await {
+                                    Ok(_) => HttpResponse::Ok().json(results),
+                                    Err(_) => {
+                                        HttpResponse::InternalServerError().json("failed to COMMIT")
+                                    }
+                                },
                             }
                         }
-                    }
-
-                    match should_rollback {
-                        true => match conn.execute("ROLLBACK").await {
-                            Ok(_) => HttpResponse::BadRequest().json("ROLLBACK"),
-                            Err(_) => {
-                                HttpResponse::InternalServerError().json("failed to ROLLBACK")
-                            }
-                        },
-
-                        false => match conn.execute("COMMIT").await {
-                            Ok(_) => HttpResponse::Ok().json(results),
-                            Err(_) => HttpResponse::InternalServerError().json("failed to COMMIT"),
-                        },
                     }
                 }
             }
