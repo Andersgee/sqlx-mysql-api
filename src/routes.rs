@@ -23,6 +23,7 @@ fn select_pool_by_header(headermap: &HeaderMap, pools: &web::Data<Pools>) -> Opt
     match db {
         "db" => Some(pools.db.clone()),
         "musker" => Some(pools.musker.clone()),
+        "svgbattle" => Some(pools.svgbattle.clone()),
         _ => None,
     }
 }
