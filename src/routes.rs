@@ -1,31 +1,12 @@
-use actix_web::{
-    get,
-    http::header::{HeaderMap, HeaderName, HeaderValue},
-    post, web, HttpResponse, Responder,
-};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::Deserialize;
-use sqlx::{Executor, MySqlPool};
+use sqlx::Executor;
 
-use crate::Pools;
+use crate::pools::{select_pool_by_header, Pools};
 
 #[derive(Deserialize)]
 struct Q {
     q: String,
-}
-
-fn select_pool_by_header(headermap: &HeaderMap, pools: &web::Data<Pools>) -> Option<MySqlPool> {
-    let custom_header: &'static str = "db";
-    let b = HeaderName::from_static(custom_header);
-    //default to "db" if no "db" header
-    let d = HeaderValue::from_str("db").unwrap();
-
-    let db = headermap.get(b).unwrap_or(&d).to_str().unwrap();
-    match db {
-        "db" => Some(pools.db.clone()),
-        "musker" => Some(pools.musker.clone()),
-        "svgbattle" => Some(pools.svgbattle.clone()),
-        _ => None,
-    }
 }
 
 #[get("/")]

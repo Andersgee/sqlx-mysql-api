@@ -1,10 +1,11 @@
 use actix_web::{dev::ServiceRequest, web, App, HttpServer};
 mod error;
+mod pools;
 mod routes;
 
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
 use dotenv::dotenv;
-use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
+use sqlx::mysql::MySqlPoolOptions;
 use std::{env, sync::OnceLock};
 
 //in javascript:
@@ -32,15 +33,9 @@ fn auth_password() -> &'static str {
     PASSWORD.get_or_init(|| env::var("DB_HTTP_AUTH_PASSWORD").unwrap())
 }
 
-pub struct Pools {
-    db: MySqlPool,
-    musker: MySqlPool,
-    svgbattle: MySqlPool,
-}
-
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    println!("starting http api (tag 0.3)");
+    println!("starting http api (tag 0.34)");
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("expected DATABASE_URL in env");
     let database_url_musker =
@@ -53,7 +48,7 @@ async fn main() -> std::io::Result<()> {
     println!("connecting to db and creating pool...");
     //let pool = web::Data::new(MySqlPoolOptions::new().max_connections(10).connect(&database_url).await.unwrap());
 
-    let pools = web::Data::new(Pools {
+    let pools = web::Data::new(pools::Pools {
         db: MySqlPoolOptions::new()
             .max_connections(2) //default is 10
             .connect(&database_url)
