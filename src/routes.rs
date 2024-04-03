@@ -1,6 +1,6 @@
 use actix_web::{
     get,
-    http::header::{self, HeaderMap, HeaderName, HeaderValue},
+    http::header::{HeaderMap, HeaderName, HeaderValue},
     post, web, HttpResponse, Responder,
 };
 use serde::Deserialize;
