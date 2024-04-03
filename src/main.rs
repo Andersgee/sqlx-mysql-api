@@ -35,17 +35,17 @@ fn auth_password() -> &'static str {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    println!("starting http api (tag 0.34)");
+    println!("starting http api (tag 0.33-multidb)");
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("expected DATABASE_URL in env");
     let database_url_musker =
         env::var("DATABASE_URL_MUSKER").expect("expected DATABASE_URL_MUSKER in env");
     let database_url_svgbattle =
-        env::var("DATABASE_URL_MUSKER").expect("expected DATABASE_URL_MUSKER in env");
+        env::var("DATABASE_URL_SVGBATTLE").expect("expected DATABASE_URL_SVGBATTLE in env");
     let addrs = env::var("DB_HTTP_LISTEN_ADRESS").expect("expected DB_HTTP_LISTEN_ADRESS in env");
     let _x = env::var("DB_HTTP_AUTH_PASSWORD").expect("expected DB_HTTP_AUTH_PASSWORD in env");
 
-    println!("connecting to db and creating pool...");
+    println!("connecting to db and creating pools...");
     //let pool = web::Data::new(MySqlPoolOptions::new().max_connections(10).connect(&database_url).await.unwrap());
 
     let pools = web::Data::new(pools::Pools {
